@@ -17,13 +17,15 @@ const modelUrl = "../models/hiyori/hiyori_pro_t10.model3.json";
 
 let currentModel, facemesh;
 
+const drawer = document.getElementById("live2d")
 const videoElement = document.querySelector(".input_video"),
     guideCanvas = document.querySelector("canvas.guides");
+
 
 (async function main() {
     // create pixi application
     const app = new PIXI.Application({
-        view: document.getElementById("live2d"),
+        view: drawer,
         autoStart: true,
         backgroundAlpha: 0,
         backgroundColor: 0xffffff,
@@ -60,6 +62,30 @@ const videoElement = document.querySelector(".input_video"),
 
     // add live2d model to stage
     app.stage.addChild(currentModel);
+    
+    // capture start
+    // https://stackoverflow.com/questions/19235286/convert-html5-canvas-sequence-to-a-video-file
+    const stream = drawer.captureStream();
+    // window.recordedchunks = []
+    window.result = document.querySelector("#videoElement2");
+    window.mediaRecorder = new MediaRecorder(stream, {
+        mimeType: "video/webm"
+    });
+    window.mediaRecorder.ondataavailable = function (event) {
+        const chunk = event.data
+        // window.recordedchunks.push(chunk)
+        // console.log('capturing..')
+        const otherIframe = document.querySelector('iframe#other')
+        if (otherIframe) {
+          const { contentWindow: otherContentWindow } = otherIframe
+          otherContentWindow.postMessage({ chunk })
+        }
+        if (!window.result.played.length) window.result.play()
+    }
+    window.mediaRecorder.start(500)
+    window.result.srcObject = window.mediaRecorder.stream
+    // capture end
+
 
     // create media pipe facemesh instance
     facemesh = new FaceMesh({
@@ -82,9 +108,17 @@ const videoElement = document.querySelector(".input_video"),
     startCamera();
 })();
 
+let latestDraw = 0;
+const targetFPS = 24;
+const periode = 1000/targetFPS;
 const onResults = (results) => {
     drawResults(results.multiFaceLandmarks[0]);
-    animateLive2DModel(results.multiFaceLandmarks[0]);
+
+    const now = new Date().getTime();
+    if ((latestDraw + periode) <= now) {
+        latestDraw = now;
+        animateLive2DModel(results.multiFaceLandmarks[0]);
+    }
 };
 
 // draw connectors and landmarks on output canvas

@@ -45,6 +45,8 @@ a:link:hover {
 video {
     max-width: 400px;
     height: auto;
+}
+video.input_video {
     transform: scale(-1, 1);
 }
 .preview canvas {

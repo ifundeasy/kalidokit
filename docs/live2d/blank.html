@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <!-- HTML Meta Tags -->
+        <title>KalidoKit - Face and Body Rig Solver</title>
+        <meta name="description" content="Track face and body rigs just your browser webcam!" />
+
+        <!-- Twitter Meta Tags -->
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta property="twitter:domain" content="kit.kalidoface.com" />
+        <meta property="twitter:url" content="https://kit.kalidoface.com/" />
+        <meta name="twitter:title" content="KalidoKit - Face and Body Rig Solver" />
+        <meta name="twitter:description" content="Track face and body rigs just your browser webcam!" />
+        <meta
+            name="twitter:image"
+            content="https://cdn.glitch.com/239c5934-4d83-4c5c-bef6-44dcdb04c8fb%2Fkalidoface-meta.jpg?v=1630110302224"
+        />
+        <meta
+            name="viewport"
+            content="viewport-fit=cover, user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1"
+        />
+        <link rel="shortcut icon" href="https://yeemachine.github.io/kalidoface-live2d-models/Icons/icon-circle.svg" />
+        <link rel="stylesheet" href="../style.css" />
+    </head>
+    <body>
+        <video id="videoElement2" controls="true" width="320" height="240" autoplay></video>
+        <script>
+            // 1. Create a `MediaSource`
+            var mediaSource = new MediaSource();
+
+            // 4. On the `sourceopen` event, create a `SourceBuffer`
+            var sourceBuffer = null;
+            mediaSource.addEventListener("sourceopen", function () {
+                // NOTE: Browsers are VERY picky about the codec being EXACTLY
+                // right here. Make sure you know which codecs you're using!
+                // sourceBuffer = mediaSource.addSourceBuffer("video/webm; codecs=\"opus,vp8\"");
+                sourceBuffer = mediaSource.addSourceBuffer("video/webm;codecs=vp8");
+
+                // If we requested any video data prior to setting up the SourceBuffer,
+                // we want to make sure we only append one blob at a time
+                sourceBuffer.addEventListener("updateend", appendToSourceBuffer);
+            });
+
+            // 5. Use `SourceBuffer.appendBuffer()` to add all of your chunks to the video
+            function appendToSourceBuffer(buffer) {
+                if (mediaSource.readyState === "open" && sourceBuffer && sourceBuffer.updating === false) {
+                    sourceBuffer.appendBuffer(buffer);
+                    window.video.play();
+                }
+            }
+            const receiveAnimation = async (event) => {
+                const { data, origin, source } = event;
+                // NEW: Try to flush our queue of video data to the video element
+                if (data.chunk) {
+                    var buffer = await data.chunk.arrayBuffer();
+                    appendToSourceBuffer(buffer);
+                }
+            };
+
+            document.addEventListener("DOMContentLoaded", () => {
+                // 2. Create an object URL from the `MediaSource`
+                var url = URL.createObjectURL(mediaSource);
+
+                // 3. Set the video's `src` to the object URL
+                window.video = document.getElementById("videoElement2");
+                video.src = url;
+                if (window.addEventListener) {
+                    window.addEventListener("message", receiveAnimation, false);
+                } else {
+                    window.attachEvent("onmessage", receiveAnimation);
+                }
+            });
+        </script>
+    </body>
+</html>
